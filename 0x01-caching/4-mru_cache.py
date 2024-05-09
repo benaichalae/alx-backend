@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """ 4-mru_cache module """
-
 from base_caching import BaseCaching
 
 
