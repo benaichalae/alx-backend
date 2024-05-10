@@ -12,7 +12,7 @@ class BasicCache(BaseCaching):
     """
 
     def __init__(self):
-        """ Initialize the parent class and set MAX_ITEMS to None (unlimited) """
+        """ Initialize the parent class and set MAX_ITEMS to None"""
         super().__init__()
         self.MAX_ITEMS = None
 
