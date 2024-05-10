@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """ 100-lfu_cache module """
 
+from collections import OrderedDict
+
 from base_caching import BaseCaching
 
 
@@ -20,38 +22,65 @@ class LFUCache(BaseCaching):
         within each frequency count (uses_by_count).
         """
         super().__init__()
-        self.cache_data = {}
-        self.counts = {}
-        self.uses_by_count = collections.defaultdict(collections.OrderedDict)
+        self.cache_data = OrderedDict()
+        self.keys_freq = []
+
+    def __reorder_items(self, mru_key):
+        """
+        Reorders the items in the cache based on the most recently used item.
+        Args:
+            mru_key: The key of the most recently used item.
+        """
+        max_positions = []
+        mru_freq = 0
+        mru_pos = 0
+        ins_pos = 0
+        for i, key_freq in enumerate(self.keys_freq):
+            if key_freq[0] == mru_key:
+                mru_freq = key_freq[1] + 1
+                mru_pos = i
+                break
+            elif not max_positions:
+                max_positions.append(i)
+            elif key_freq[1] < self.keys_freq[max_positions[-1]][1]:
+                max_positions.append(i)
+        max_positions.reverse()
+        for pos in max_positions:
+            if self.keys_freq[pos][1] > mru_freq:
+                break
+            ins_pos = pos
+        self.keys_freq.pop(mru_pos)
+        self.keys_freq.insert(ins_pos, [mru_key, mru_freq])
 
     def put(self, key, item):
         """
         Add an item to the cache,
         following the LFU strategy with LRU tiebreaker.
         - If key or item is None, do nothing.
-        - Otherwise, update the cache_data, counts,
-        and uses_by_count dictionaries.
+        - Otherwise, update the cache_data and keys_freq list.
         - If the cache reaches its maximum size,
         discard the least frequently used item (LFU).
         - If multiple items have the same frequency (LFU),
-        discard the least recently used
-          among them (LRU) based on the uses_by_count dictionary.
+        discard the least recently used among them (LRU)
+        based on the keys_freq list.
         """
         if key is not None and item is not None:
-            if key in self.cache_data:
-                self.counts[key] += 1
+            if key not in self.cache_data:
+                if len(self.cache_data) + 1 > self.MAX_ITEMS:
+                    lfu_key, _ = self.keys_freq[-1]
+                    self.cache_data.pop(lfu_key)
+                    self.keys_freq.pop()
+                    print("DISCARD:", lfu_key)
+                self.cache_data[key] = item
+                ins_index = len(self.keys_freq)
+                for i, key_freq in enumerate(self.keys_freq):
+                    if key_freq[1] == 0:
+                        ins_index = i
+                        break
+                self.keys_freq.insert(ins_index, [key, 0])
             else:
-                self.counts[key] = 1
-                if len(self.cache_data) >= self.MAX_ITEMS:
-                    min_count = min(self.counts.values())
-                    to_discard = self.uses_by_count[min_count].popitem(
-                            last=False)
-                    del self.cache_data[to_discard[0]]
-                    del self.counts[to_discard[0]]
-                    print("DISCARD: {}".format(to_discard[0]))
-
-            self.cache_data[key] = item
-            self.uses_by_count[self.counts[key]][key] = True
+                self.cache_data[key] = item
+                self.__reorder_items(key)
 
     def get(self, key):
         """
@@ -61,7 +90,5 @@ class LFUCache(BaseCaching):
         the key and update its access count.
         """
         if key is not None and key in self.cache_data:
-            self.counts[key] += 1
-            self.uses_by_count[self.counts[key]].move_to_end(key)
-            return self.cache_data[key]
-        return None
+            self.__reorder_items(key)
+        return self.cache_data.get(key, None)
