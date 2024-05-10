@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """ 4-mru_cache module """
 
+from collections import OrderedDict
+
 from base_caching import BaseCaching
 
 
-class LRUCache(BaseCaching):
+class MRUCache(BaseCaching):
     """
     LRUCache inherits from BaseCaching and implements an LRU caching system.
     """
@@ -17,8 +19,7 @@ class LRUCache(BaseCaching):
         to track key access order for LRU.
         """
         super().__init__()
-        self.cache_data = {}
-        self.access_order = collections.OrderedDict()
+        self.cache_data = OrderedDict()
 
     def put(self, key, item):
         """
@@ -29,12 +30,14 @@ class LRUCache(BaseCaching):
         discard the least recently used item (LRU).
         """
         if key is not None and item is not None:
-            self.cache_data[key] = item
-            self.access_order[key] = True
-            if len(self.cache_data) > self.MAX_ITEMS:
-                discarded_key = self.access_order.pop(False)
-                del self.cache_data[discarded_key]
-                print("DISCARD: {}".format(discarded_key))
+            if key not in self.cache_data:
+                if len(self.cache_data) + 1 > BaseCaching.MAX_ITEMS:
+                    mru_key, _ = self.cache_data.popitem(False)
+                    print("DISCARD:", mru_key)
+                self.cache_data[key] = item
+                self.cache_data.move_to_end(key, last=False)
+            else:
+                self.cache_data[key] = item
 
     def get(self, key):
         """
@@ -45,6 +48,5 @@ class LRUCache(BaseCaching):
         - Return the value associated with the key.
         """
         if key is not None and key in self.cache_data:
-            self.access_order.move_to_end(key)
-            return self.cache_data[key]
-        return None
+            self.cache_data.move_to_end(key, last=False)
+        return self.cache_data.get(key, None)
