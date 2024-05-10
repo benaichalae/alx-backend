@@ -26,10 +26,12 @@ class LIFOCache(BaseCaching):
         discard the most recently added item (LIFO).
         """
         if key is not None and item is not None:
+            if key not in self.cache_data:
+                if len(self.cache_data) + 1 > BaseCaching.MAX_ITEMS:
+                    last_key, _ = self.cache_data.popitem(True)
+                    print("DISCARD:", last_key)
             self.cache_data[key] = item
-            if len(self.cache_data) > self.MAX_ITEMS:
-                discarded_key = self.cache_data.popitem()[0]
-                print("DISCARD: {}".format(discarded_key))
+            self.cache_data.move_to_end(key, last=True)
 
     def get(self, key):
         """
@@ -37,4 +39,6 @@ class LIFOCache(BaseCaching):
         - If key is None or doesn't exist, return None.
         - Otherwise, return the value associated with the key.
         """
+        if key is None or key not in self.cache_data:
+            return None
         return self.cache_data.get(key)
