@@ -15,7 +15,7 @@ class LIFOCache(BaseCaching):
         set MAX_ITEMS based on BaseCaching.MAX_ITEMS.
         """
         super().__init__()
-        self.cache_data = {}
+        self.cache_data = OrderedDict()
 
     def put(self, key, item):
         """
@@ -31,7 +31,6 @@ class LIFOCache(BaseCaching):
                     last_key, _ = self.cache_data.popitem(True)
                     print("DISCARD:", last_key)
             self.cache_data[key] = item
-            self.cache_data.move_to_end(key, last=True)
 
     def get(self, key):
         """
