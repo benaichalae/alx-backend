@@ -26,10 +26,11 @@ class FIFOCache(BaseCaching):
         discard the least recently used item (FIFO).
         """
         if key is not None and item is not None:
-            self.cache_data[key] = item
-            if len(self.cache_data) > self.MAX_ITEMS:
-                discarded_key, _ = self.cache_data.popitem(last=False)
-                print("DISCARD: {}".format(discarded_key))
+            if len(self.cache_data) >= self.MAX_ITEMS:
+            first_item = next(iter(self.cache_data))
+            print("DISCARD:", first_item)
+            del self.cache_data[first_item]
+        self.cache_data[key] = item
 
     def get(self, key):
         """
