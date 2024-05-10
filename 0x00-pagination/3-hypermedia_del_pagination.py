@@ -1,31 +1,8 @@
 #!/usr/bin/env python3
-"""function named index_range"""
+"""Deletion-resilient hypermedia pagination
+"""
 import csv
-import math
-from typing import List, Dict
-
-
-def index_range(page: int, page_size: int) -> tuple:
-    """
-    This function calculates the start and
-    end index for a given page and page size.
-
-    Args:
-        page: The page number (1-indexed).
-        page_size: The number of elements per page.
-
-    Returns:
-        A tuple containing the start and end index for the requested page.
-    """
-
-    if page <= 0:
-        raise ValueError("Page number must be positive")
-    if page_size <= 0:
-        raise ValueError("Page size must be positive")
-
-    start_index = (page - 1) * page_size
-    end_index = start_index + page_size
-    return start_index, end_index
+from typing import Dict, List
 
 
 class Server:
@@ -53,40 +30,43 @@ class Server:
         """
         if self.__indexed_dataset is None:
             dataset = self.dataset()
-            self.__indexed_dataset = {i: row for i, row in enumerate(dataset)}
+            truncated_dataset = dataset[:1000]
+            self.__indexed_dataset = {
+                i: dataset[i] for i in range(len(dataset))
+            }
         return self.__indexed_dataset
 
     def get_hyper_index(self, index: int = None, page_size: int = 10) -> Dict:
         """
-        Provides hypermedia information about
-        a requested page of data with deletion resilience.
-
+        Retrieves information about a page from a given index
+        and with a specified size.
         Args:
-            index: The starting index of the requested page (default: None).
-            page_size: The number of entries per page (default: 10).
-
+            index (int): The starting index of the page.
+            page_size (int): The size of the page.
         Returns:
-            A dictionary containing hypermedia
-            information about the requested page.
+            dict: A dictionary containing the page information.
+            - index (int): The starting index of the page.
+            - next_index (int): The index of the next page.
+            - page_size (int): The size of the page.
+            - data (list): The data in the page.
         """
-
-        assert index is None or 0 <= index < len(self.indexed_dataset),
-
-        if index is None:
-            index = 0
-
-        dataset = self.indexed_dataset()
-        data = []
-        next_index = index
-
-        for i in range(index, index + page_size):
-            if i in dataset:
-                data.append(dataset[i])
-                next_index = i + 1
-
-        return {
-            "index": index,
-            "data": data,
-            "page_size": page_size,
-            "next_index": next_index if next_index < len(dataset) else None
+        data = self.indexed_dataset()
+        assert index is not None and index >= 0 and index <= max(data.keys())
+        page_data = []
+        data_count = 0
+        next_index = None
+        start = index if index else 0
+        for i, item in data.items():
+            if i >= start and data_count < page_size:
+                page_data.append(item)
+                data_count += 1
+            if data_count == page_size:
+                next_index = i
+                break
+        page_info = {
+            'index': index,
+            'next_index': next_index,
+            'page_size': len(page_data),
+            'data': page_data,
         }
+        return page_info
