@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """ 2-lifo_cache module """
 
+from collections import OrderedDict
+
 from base_caching import BaseCaching
 
 
