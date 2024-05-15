@@ -5,26 +5,26 @@ from flask_babel import Babel, get_locale
 
 
 class Config:
+    """Config class for Babel setup"""
     LANGUAGES = ["en", "fr"]
+    BABEL_DEFAULT_LOCALE = "en"
+    BABEL_DEFAULT_TIMEZONE = "UTC"
 
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config.from_object(Config)
-
-babel = Babel(app, default_locale='en', default_timezone='UTC')
-
-
-@app.before_request
-def before_request():
-    if get_locale() not in Config.LANGUAGES:
-        g.locale = 'en'
-    else:
-        g.locale = get_locale()
+babel = Babel(app)
 
 
 @app.route('/')
 def index() -> str:
+    """
+    Renders the index page.
+
+    Returns:
+        str: The rendered HTML content of the index page.
+    """
     return render_template('1-index.html')
 
 
