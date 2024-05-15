@@ -8,6 +8,12 @@ app.url_map.strict_slashes = False
 
 @app.route('/')
 def index() -> str:
+    """
+    Renders the index page.
+
+    Returns:
+        str: The rendered HTML content of the index page.
+    """
     return render_template('0-index.html')
 
 
